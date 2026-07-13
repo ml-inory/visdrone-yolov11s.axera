@@ -1,57 +1,60 @@
 # VisDrone YOLO11s C++ SDK
 
-基于 libdet.axera 的 VisDrone 航拍目标检测 C++ SDK。
+预编译的 C++ 推理库和可执行程序，基于 libdet.axera。
 
-## 环境要求
-
-### 本机构建（仅验证编译）
-- CMake >= 3.16
-- gcc/g++ >= 9
-- libopencv-dev
-
-### 交叉编译（AX650 板端运行）
-- AX650 BSP SDK V3.10.2
-  - 下载: https://hf-mirror.com/AXERA-TECH/AX650-Community-Hub/resolve/main/sdk/edge-computing-AX650_SDK_V3.10.2/02.%20SDK/AX650_SDK_V3.10.2/AX650_SDK_V3.10.2_20260513151335.tgz
-
-## 构建步骤
-
-### 本机构建
-```bash
-mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
-make -j$(nproc)
+## 文件说明
+```
+bin/visdrone_detect    可执行程序（aarch64，开箱即用）
+lib/libdet.so          共享库（aarch64，OpenCV 静态链接）
+include/libdet.h       C API 头文件
+include/ax_devices.h   设备枚举头文件
 ```
 
-### 交叉编译（AX650）
-```bash
-# 1. 安装 AX650 BSP SDK
-wget <BSP_URL> -O AX650_SDK.tgz
-tar xzf AX650_SDK.tgz -C /opt/
+## 运行依赖
+板端运行时库（板端已预装）:
+- `/soc/lib/libax_engine.so`
+- `/soc/lib/libax_sys.so`
 
-# 2. 编译
-mkdir build_arm && cd build_arm
-cmake .. \
-  -DCMAKE_TOOLCHAIN_FILE=../toolchain-aarch64.cmake \
-  -DAX_RUNTIME_ROOT=/opt/AX650_SDK_V3.10.2 \
-  -DCMAKE_BUILD_TYPE=Release
-make -j$(nproc)
+## 用法
+
+### 直接运行
+```bash
+chmod +x bin/visdrone_detect
+LD_LIBRARY_PATH=/soc/lib ./bin/visdrone_detect model.axmodel image.jpg 0.25
 ```
 
-## 上板运行
-```bash
-scp build_arm/visdrone_detect user@board:~
-scp model.axmodel user@board:~
-ssh user@board
-export LD_LIBRARY_PATH=/lib/firmware:$LD_LIBRARY_PATH
-./visdrone_detect model.axmodel test.jpg 0.25
+### 集成到自己的项目
+```cpp
+#include "libdet.h"
+
+ax_det_init_t init = {};
+init.dev_type = axcl_device;
+init.model_type = ax_det_model_type_yolo11;
+sprintf(init.model_path, "model.axmodel");
+init.num_classes = 10;
+init.threshold = 0.25f;
+
+ax_det_handle_t handle;
+ax_det_init(&init, &handle);
+
+// 加载 cv::Mat 图像 (RGB uint8), resize 到 640x640
+ax_det_img_t img = {.data = rgb_data, .width = 640, .height = 640,
+                    .channels = 3, .stride = 640 * 3};
+ax_det_result_t result;
+ax_det(handle, &img, &result);
+
+ax_det_deinit(handle);
 ```
 
-## API 说明
-
-程序接收命令行参数:
+编译:
 ```bash
-./visdrone_detect <model.axmodel> <image.jpg> [threshold]
+aarch64-none-linux-gnu-g++ -std=c++17 \
+  -I include -L lib -o my_detect my_detect.cpp \
+  -ldet -lpthread -ldl
 ```
 
-内部使用 libdet.axera C API (`ax_det_init` / `ax_det` / `ax_det_deinit`) 完成端到端检测。
-libdet.axera 源码: https://github.com/AXERA-TECH/libdet.axera.git
+## 编译（如需）
+源码和 CMakeLists.txt 见: https://github.com/ml-inory/visdrone-yolov11s.axera
+交叉编译依赖:
+- AX650 BSP SDK V3.10.2（OpenCV 4.5.5 aarch64）
+- aarch64-none-linux-gnu-g++ 9.2+

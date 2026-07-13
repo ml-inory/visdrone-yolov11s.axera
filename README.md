@@ -1,94 +1,63 @@
 # VisDrone YOLO11s — AX650 目标检测模型
 
-基于 YOLO11 架构的航拍目标检测模型，在 VisDrone2019-DET 数据集上训练，部署于 AX650 NPU 芯片。
+基于 YOLO11s 架构的航拍目标检测模型，在 [VisDrone2019-DET](https://hf-mirror.com/datasets/Voxel51/VisDrone2019-DET) 数据集上训练，编译为 AX650 AXMODEL。
 
-## 模型概述
-| 项目 | 说明 |
-|------|------|
-| 任务类型 | 目标检测 (object-detection) |
-| 目标芯片 | AX650 (NPU3) |
-| 输入 | 640x640 RGB 图像, NHWC uint8 |
-| 输出 | 检测框 (x,y,w,h), 类别, 置信度 |
+![Detection Result](result.jpg)
+
+## 模型信息
+| 项目 | 值 |
+|------|-----|
+| 架构 | YOLO11s |
+| 任务 | 目标检测 |
+| 类别数 | 11 (含背景) |
 | 类别 | pedestrian, people, bicycle, car, van, truck, tricycle, awning-tricycle, bus, motor |
-| 推理延迟 | ~3.3 ms (AX650) |
+| 输入 | 640×640 BGR, [0,255]→[0,1] float |
+| 芯片 | AX650N (NPU3) |
+| 量化 | U16 (Conv层) |
+| AXMODEL | 10.6 MB |
+| 推理延迟 | ~3.3 ms |
 
-## 目录说明
+## 目录结构
 ```
-models/          AXMODEL 编译产物
-demo/            5 张 VisDrone 真实航拍测试图像
-python/          Python SDK (基于 libdet.axera)
-cpp/             C++ SDK (基于 libdet.axera)
-model_convert/   从零复现模型转换的完整脚本和配置
-reports/         编译、仿真、板端测试报告
+models/          AXMODEL + model_meta.json
+demo/            5张VisDrone测试图
+python/          Python SDK (pydet绑定libdet.axera)
+cpp/             C++ SDK (bin+lib+header)
+  bin/           visdrone_detect (aarch64可执行)
+  lib/           libdet.so (后处理+推理)
+  include/       头文件
 ```
 
 ## 快速开始
 
-### 路径 A: 直接用 AXMODEL 推理
-
-测试图像: `demo/` 目录下有 5 张 VisDrone 真实航拍图像。
-
-#### Python
-```bash
-cd python
-
-# 1. 安装依赖
-pip install -r requirements.txt
-
-# 2. 安装 pyaxengine
-git clone https://github.com/AXERA-TECH/pyaxengine.git
-pip install ./pyaxengine
-
-# 3. 编译 libdet.axera (后处理库)
-git clone https://github.com/AXERA-TECH/libdet.axera.git
-cd libdet.axera
-sudo apt install libopencv-dev build-essential
-./build.sh
-export LD_LIBRARY_PATH=$(pwd)/build/lib:${LD_LIBRARY_PATH}
-cd ..
-
-# 4. 运行
-python example.py \
-  --model ../models/model.axmodel \
-  --image ../demo/demo_00.jpg
-```
-
-#### C++
+### C++ (板上直接运行)
 ```bash
 cd cpp
-
-# 本机构建 (仅验证编译)
-mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
-make -j$(nproc)
-
-# 交叉编译 (AX650, 需 BSP SDK)
-mkdir build_arm && cd build_arm
-cmake .. \
-  -DCMAKE_TOOLCHAIN_FILE=../toolchain-aarch64.cmake \
-  -DAX_RUNTIME_ROOT=/opt/AX650_SDK_V3.10.2 \
-  -DCMAKE_BUILD_TYPE=Release
-make -j$(nproc)
-
-# 上板运行
-scp visdrone_detect root@board:~/
-scp ../../models/model.axmodel root@board:~/
-scp ../../demo/demo_00.jpg root@board:~/
-ssh root@board
-export LD_LIBRARY_PATH=/lib/firmware:$LD_LIBRARY_PATH
-./visdrone_detect model.axmodel demo_00.jpg 0.25
+chmod +x bin/visdrone_detect
+LD_LIBRARY_PATH=./lib:/soc/lib ./bin/visdrone_detect \
+  ../models/model.axmodel ../demo/demo_00.jpg 0.25
 ```
 
-### 路径 B: 从零复现模型转换
-参见 [model_convert/README.md](model_convert/README.md)
+### Python (板上)
+```bash
+cd python
+pip install -r requirements.txt
+python example.py --model ../models/model.axmodel --image ../demo/demo_00.jpg
+```
+Python SDK 依赖 `pyaxengine` 和板端 `libdet.so`。
 
-## 性能摘要
-参见 [reports/performance_report.md](reports/performance_report.md)
-- 推理延迟: ~3.3 ms (AX650)
-- AXMODEL 大小: 10.1 MB
-- MACs: 10.4 G
-- 校准数据: 10 张 VisDrone 真实航拍图像
+## 精度
+
+| 输出层 | Cosine Similarity | MSE |
+|--------|-------------------|-----|
+| output0 (80×80) | 0.99999 | 0.00531 |
+| output1 (40×40) | 1.00000 | 0.00365 |
+| output2 (20×20) | 0.99999 | 0.00371 |
+
+## 预处理说明
+
+输入 uint8 BGR [0,255] 通过 `std=1/255` 归一化到 float [0,1]，匹配 ONNX 浮点模型输入。
 
 ## 已知限制
-- 输入分辨率固定为 640x640
-- batch size 固定为 1
+- 输入分辨率固定: 640×640
+- Batch size: 1
