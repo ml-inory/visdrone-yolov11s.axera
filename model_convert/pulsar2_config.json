@@ -12,9 +12,9 @@
         "tensor_name": "images",
         "calibration_dataset": "export/calib_data.tar",
         "calibration_format": "Image",
-        "calibration_size": 10,
+        "calibration_size": 33,
         "calibration_mean": [0, 0, 0],
-        "calibration_std": [1, 1, 1]
+        "calibration_std": [255.0, 255.0, 255.0]
       }
     ],
     "calibration_method": "MinMax",
