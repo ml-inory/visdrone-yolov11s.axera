@@ -15,7 +15,7 @@
 | 类别 | pedestrian, people, bicycle, car, van, truck, tricycle, awning-tricycle, bus, motor |
 | 输入 | 640×640 BGR → [0,1] float |
 | 芯片 | AX650N (NPU3) |
-| 量化 | U16 (Conv 层) |
+| 量化 | INT8 |
 | AXMODEL | 10.6 MB |
 | 精度 | Cosine >0.99999, MSE <0.006 |
 
