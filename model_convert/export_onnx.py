@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Export VisDrone YOLOv26s (YOLO11 architecture) to static ONNX with 3 feature map outputs.
+"""Export VisDrone YOLO11s (YOLO11 architecture) to static ONNX with 3 feature map outputs.
 
 Outputs: 3 tensors in NHWC format [1, H, W, 15] where 15 = 4 (bbox) + 11 (classes).
 This format is compatible with libdet.axera (model_type=3, ax_det_model_type_yolo11).

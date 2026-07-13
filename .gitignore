@@ -6,6 +6,5 @@ build_arm/
 result.jpg
 
 # 大文件通过 GitHub Release 发布
-models/model.axmodel
 model_convert/model.onnx
 model_convert/calib_data.tar
