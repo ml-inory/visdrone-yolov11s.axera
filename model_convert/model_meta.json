@@ -1,0 +1,108 @@
+{
+  "model_name": "visdrone-yolo11s",
+  "framework": "ultralytics",
+  "task": "detection",
+  "architecture": "YOLO11",
+  "num_classes": 11,
+  "classes": [
+    "pedestrian",
+    "people",
+    "bicycle",
+    "car",
+    "van",
+    "truck",
+    "tricycle",
+    "awning-tricycle",
+    "bus",
+    "motor",
+    "background"
+  ],
+  "input_size": [
+    640,
+    640
+  ],
+  "inputs": [
+    {
+      "name": "images",
+      "shape": [
+        1,
+        3,
+        640,
+        640
+      ],
+      "dtype": "float32",
+      "layout": "NCHW",
+      "preprocess": "BGR to RGB, resize to 640x640, normalize mean=[0,0,0] std=[1,1,1], divide by 255.0"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "output0",
+      "shape": [
+        1,
+        80,
+        80,
+        15
+      ],
+      "dtype": "float32",
+      "semantic": "detection_head_output_scale_0",
+      "channels": 15,
+      "split": "bbox=[0:11]"
+    },
+    {
+      "name": "output1",
+      "shape": [
+        1,
+        40,
+        40,
+        15
+      ],
+      "dtype": "float32",
+      "semantic": "detection_head_output_scale_1",
+      "channels": 15,
+      "split": "bbox=[0:11]"
+    },
+    {
+      "name": "output2",
+      "shape": [
+        1,
+        20,
+        20,
+        15
+      ],
+      "dtype": "float32",
+      "semantic": "detection_head_output_scale_2",
+      "channels": 15,
+      "split": "bbox=[0:11]"
+    }
+  ],
+  "opset": 18,
+  "onnx_size_bytes": 37952310,
+  "libdet_model_type": "ax_det_model_type_yolo11",
+  "libdet_model_type_int": 3,
+  "libdet_config": {
+    "num_classes": 11,
+    "num_kpt": 0,
+    "threshold": 0.25
+  },
+  "pulsar2_input_config": {
+    "input_shape": [
+      1,
+      640,
+      640,
+      3
+    ],
+    "input_dtype": "uint8",
+    "input_layout": "NHWC",
+    "mean": [
+      0,
+      0,
+      0
+    ],
+    "std": [
+      1,
+      1,
+      1
+    ]
+  }
+}

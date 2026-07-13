@@ -1,0 +1,4 @@
+# pyaxengine for AXMODEL inference
+# git+https://github.com/AXERA-TECH/pyaxengine.git
+numpy
+opencv-python

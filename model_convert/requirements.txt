@@ -1,0 +1,13 @@
+# ONNX 导出依赖
+ultralytics
+torch
+onnx
+onnx-simplifier
+onnxslim
+
+# 校准数据生成
+numpy
+Pillow
+
+# Pulsar2 通过 Docker 提供
+# 镜像: pulsar2:6.0-lite (或 hf-mirror.com/AXERA-TECH/Pulsar2)
